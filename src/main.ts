@@ -2,7 +2,7 @@ import { connect, type CadencrClient, type JsonValue, type ThemeSnapshot } from 
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { Requests } from "./requests";
-import { palette } from "./palette";
+import { palette, terminalTheme } from "./palette";
 import "./style.css";
 
 interface Output {
@@ -54,6 +54,14 @@ let sentCols = 0;
 let sentRows = 0;
 const readyStatus = "LazyGit · conversation worktree · q exits";
 let syncTheme = true;
+const reload = element<HTMLButtonElement>("reload");
+let startedPalette: Record<string, string> = {};
+
+function samePalette(a: Record<string, string>, b: Record<string, string>): boolean {
+  const keys = Object.keys(b);
+  return keys.length === Object.keys(a).length && keys.every((key) => a[key] === b[key]);
+}
+
 const requests = new Requests((waiting) => {
   status.textContent = waiting ? "CadencR is busy. Resuming LazyGit automatically…" : running ? readyStatus : "Starting LazyGit…";
 });
@@ -92,14 +100,11 @@ function report(problem: unknown): void {
 }
 
 function theme(snapshot: ThemeSnapshot): void {
-  terminal.options.theme = {
-    background: snapshot.tokens.background,
-    foreground: snapshot.tokens.foreground,
-    cursor: snapshot.tokens.foreground,
-    selectionBackground: snapshot.tokens.accent,
-  };
+  terminal.options.theme = terminalTheme(snapshot);
   if (client && running && syncTheme) {
-    void backend("terminal.theme", { palette: palette(snapshot) }).catch(report);
+    const next = palette(snapshot);
+    reload.hidden = samePalette(startedPalette, next);
+    void backend("terminal.theme", { palette: next }).catch(report);
   }
 }
 
@@ -198,14 +203,17 @@ async function start(): Promise<void> {
     syncTheme = config.sync_theme !== false;
     await appearance();
     fitTerminal();
+    const launched = syncTheme ? palette(client.theme) : {};
     const result = await backend<{ exited: boolean; status: string; offset: number }>("terminal.start", {
       lazygitPath: typeof config.lazygit_path === "string" ? config.lazygit_path : "lazygit",
-      palette: syncTheme ? palette(client.theme) : {},
+      palette: launched,
       cols: terminal.cols,
       rows: terminal.rows,
     });
     if (disposed || current !== generation) return;
     if (result.exited) throw new Error(result.status);
+    startedPalette = launched;
+    reload.hidden = true;
     terminal.reset();
     offset = 0;
     replayEnd = result.offset;
@@ -255,6 +263,10 @@ terminal.onData((data) => {
 const observer = new ResizeObserver(() => void resize());
 observer.observe(container);
 retry.addEventListener("click", () => void start());
+reload.addEventListener("click", () => {
+  reload.hidden = true;
+  void backend("terminal.stop", {}).then(() => start()).catch(report);
+});
 window.addEventListener("pagehide", () => {
   disposed = true;
   generation++;
