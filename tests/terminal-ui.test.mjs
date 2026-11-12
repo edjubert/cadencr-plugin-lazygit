@@ -133,6 +133,53 @@ test("other failures remain visible and do not replay requests", { timeout: 30_0
   assert.equal(fixture.attempts().length, count);
 });
 
+test("a backend that lost its session is started again without an error", { timeout: 30_000 }, async (t) => {
+  const fixture = await host(t);
+  const page = await browser(t, fixture);
+  await page.getByRole("status").filter({ hasText: "q exits" }).waitFor();
+  const starts = () => fixture.attempts().filter((attempt) => attempt.method === "terminal.start").length;
+  assert.equal(starts(), 1);
+  fixture.failNext("terminal.read", {
+    code: "TERMINAL_NOT_RUNNING", message: "Start LazyGit before reading the terminal.",
+  });
+  await until(async () => starts() === 2);
+  await page.getByRole("status").filter({ hasText: "q exits" }).waitFor();
+  assert.equal(await page.locator("#error").isVisible(), false);
+  await page.waitForTimeout(500);
+  assert.equal(starts(), 2);
+});
+
+test("a resize rejected because nothing runs stays silent", { timeout: 30_000 }, async (t) => {
+  const fixture = await host(t);
+  const page = await browser(t, fixture);
+  await page.getByRole("status").filter({ hasText: "q exits" }).waitFor();
+  fixture.failNext("terminal.resize", {
+    code: "TERMINAL_NOT_RUNNING", message: "Start LazyGit before resizing the terminal.",
+  });
+  await page.setViewportSize({ width: 900, height: 600 });
+  await until(async () => fixture.attempts().some((attempt) => attempt.method === "terminal.resize" && attempt.rejected));
+  await page.waitForTimeout(300);
+  assert.equal(await page.locator("#error").isVisible(), false);
+  assert.equal(await page.getByRole("button", { name: "Reconnect" }).isVisible(), false);
+});
+
+test("a reload against an older backend explains how to update it and keeps LazyGit", {
+  timeout: 30_000,
+}, async (t) => {
+  const fixture = await host(t);
+  const page = await browser(t, fixture);
+  await page.getByRole("status").filter({ hasText: "q exits" }).waitFor();
+  fixture.failNext("terminal.stop", {
+    code: "METHOD_NOT_FOUND", message: "Unknown backend method: terminal.stop",
+  });
+  await page.evaluate(() => window.fixtureTheme("rgb(200 60 60)"));
+  await page.getByRole("button", { name: "Reload LazyGit (theme changed)" }).click();
+  await page.getByRole("alert").filter({ hasText: "Restart CadencR" }).waitFor();
+  assert.equal((await fixture.records()).filter((record) => record.type === "boot").length, 1);
+  assert.equal(await page.locator("#reload").isVisible(), true);
+  await page.getByRole("status").filter({ hasText: "q exits" }).waitFor();
+});
+
 test("the installed LazyGit renders in a real browser and accepts quit", {
   timeout: 30_000, skip: !process.env.CADENCR_LAZYGIT_SMOKE,
 }, async (t) => {
