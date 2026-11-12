@@ -47,6 +47,7 @@ let resizePending = false;
 let appearanceRead = 0;
 let polling = false;
 let lastPoll = 0;
+let lastRestart = 0;
 let lastInput = 0;
 let pendingKeys = "";
 let keyTimer: ReturnType<typeof setTimeout> | undefined;
@@ -89,11 +90,27 @@ async function appearance(): Promise<void> {
   await resize();
 }
 
+function errorText(problem: unknown): string {
+  return problem instanceof Error ? problem.message : String(problem);
+}
+
+/** The backend has no LazyGit to talk to: it was restarted, or the process ended. */
+function notRunning(problem: unknown): boolean {
+  return (problem as { code?: unknown } | null)?.code === "TERMINAL_NOT_RUNNING" ||
+    /^(Start LazyGit before |LazyGit is not running)/.test(errorText(problem));
+}
+
+/** The running backend predates this interface and lacks a method it calls. */
+function staleBackend(problem: unknown): boolean {
+  return (problem as { code?: unknown } | null)?.code === "METHOD_NOT_FOUND" ||
+    /^Unknown backend method:/.test(errorText(problem));
+}
+
 function report(problem: unknown): void {
   running = false;
   generation++;
   clearTimeout(timer);
-  error.textContent = problem instanceof Error ? problem.message : String(problem);
+  error.textContent = errorText(problem);
   error.hidden = false;
   retry.hidden = false;
   status.textContent = "LazyGit connection interrupted.";
@@ -149,7 +166,15 @@ async function poll(current: number): Promise<void> {
     if (Date.now() - lastInput < 1000) delay = 100;
     timer = setTimeout(() => void poll(current), delay);
   } catch (problem) {
-    if (!disposed && current === generation) report(problem);
+    if (disposed || current !== generation) return;
+    // read only fails this way when the backend has no session at all, e.g. it
+    // was restarted while this page stayed open. Start one, but not in a loop.
+    if (notRunning(problem) && Date.now() - lastRestart > 10_000) {
+      lastRestart = Date.now();
+      void start();
+    } else {
+      report(problem);
+    }
   } finally {
     polling = false;
   }
@@ -174,7 +199,8 @@ async function resize(): Promise<void> {
       }
     } while (resizePending && running && !disposed);
   } catch (problem) {
-    if (!disposed) report(problem);
+    // polling tells a vanished session from a LazyGit that simply exited.
+    if (!disposed && !notRunning(problem)) report(problem);
   } finally {
     resizing = false;
   }
@@ -248,7 +274,7 @@ function flushKeys(): void {
           timer = setTimeout(() => void poll(generation), Math.max(0, 100 - (Date.now() - lastPoll)));
         }
       }
-    }).catch((problem: unknown) => { if (!disposed) report(problem); });
+    }).catch((problem: unknown) => { if (!disposed && !notRunning(problem)) report(problem); });
   }
 }
 
@@ -265,7 +291,16 @@ observer.observe(container);
 retry.addEventListener("click", () => void start());
 reload.addEventListener("click", () => {
   reload.hidden = true;
-  void backend("terminal.stop", {}).then(() => start()).catch(report);
+  void backend("terminal.stop", {}).then(() => start()).catch((problem: unknown) => {
+    if (!staleBackend(problem)) {
+      report(problem);
+      return;
+    }
+    // LazyGit itself keeps running; only the restart is unavailable.
+    error.textContent = "The LazyGit backend is older than this tab. Restart CadencR or toggle the tab in Settings → Custom tabs to load the update.";
+    error.hidden = false;
+    reload.hidden = false;
+  });
 });
 window.addEventListener("pagehide", () => {
   disposed = true;
