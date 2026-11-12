@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>CadencR + lazygit</title>
+  <desc>The CadencR dot ring with lazygit's nightcap in the center, a crescent moon, and three dots in the colors of lazygit's branch.</desc>
+  <rect x="50" y="50" width="412" height="412" rx="92" fill="#131416"/>
+  <circle cx="256.0" cy="132.0" r="16.5" fill="#EFF0F2"/>
+  <circle cx="318.0" cy="148.6" r="16.5" fill="#EFF0F2"/>
+  <circle cx="380.0" cy="256.0" r="16.5" fill="#EFF0F2"/>
+  <circle cx="363.4" cy="318.0" r="16.5" fill="#EFF0F2"/>
+  <circle cx="318.0" cy="363.4" r="16.5" fill="#EFF0F2"/>
+  <circle cx="256.0" cy="380.0" r="16.5" fill="#EFF0F2"/>
+  <circle cx="194.0" cy="363.4" r="16.5" fill="#4ffefd"/>
+  <circle cx="148.6" cy="318.0" r="16.5" fill="#fffa46"/>
+  <circle cx="132.0" cy="256.0" r="16.5" fill="#f469f8"/>
+  <circle cx="148.6" cy="194.0" r="16.5" fill="#EFF0F2"/>
+  <circle cx="194.0" cy="148.6" r="16.5" fill="#EFF0F2"/>
+  <path transform="translate(363.4 194) scale(0.085) translate(-307 -401)" fill="#92c8fa"
+    d="M272 70 C130 130 62 260 62 390 C62 600 230 732 410 732 C470 732 515 720 552 705 C440 670 340 610 275 510 C225 430 195 340 215 220 C225 160 245 110 272 70 Z"/>
+  <!-- lazygit nightcap replaces the central dot -->
+  <g transform="translate(256 256) scale(0.22) translate(-440 -286)" fill="#45cb7c">
+    <path d="M135 510 C140 340 230 140 440 85 C490 72 530 72 565 76 L515 125 C455 142 410 175 412 240 C414 330 500 430 555 510 Z"/>
+    <circle cx="622" cy="185" r="122"/>
+  </g>
+</svg>

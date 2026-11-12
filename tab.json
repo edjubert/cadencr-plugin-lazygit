@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "kind": "tab",
+  "id": "lazygit",
+  "name": "LazyGit",
+  "version": "0.1.0",
+  "description": "Run LazyGit in the conversation's worktree, with CadencR theme colors and your existing Git configuration.",
+  "icon": "icon.svg",
+  "api_version": 1,
+  "entry": "dist/index.html",
+  "tab": { "label": "LazyGit", "replaces": ["git"] },
+  "permissions": [],
+  "backend": {
+    "protocol": 1,
+    "reasoning": "Runs your installed LazyGit in a terminal in the conversation's worktree, using your Git configuration and credentials. LazyGit can change files, commit and push through your actions.",
+    "binary": {
+      "darwin-aarch64": "bin/darwin-aarch64/lazygit",
+      "darwin-x86_64": "bin/darwin-x86_64/lazygit",
+      "linux-x86_64": "bin/linux-x86_64/lazygit"
+    }
+  },
+  "configuration": [
+    {
+      "key": "lazygit_path",
+      "type": "string",
+      "label": "LazyGit executable (name or absolute path)",
+      "scope": "global",
+      "default": "lazygit"
+    },
+    {
+      "key": "sync_theme",
+      "type": "boolean",
+      "label": "Use CadencR's theme in LazyGit",
+      "scope": "global",
+      "default": true
+    }
+  ]
+}
