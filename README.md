@@ -91,9 +91,11 @@ opens a pull request. The tab strip's **+** menu switches back to LazyGit.
 These are startup options. After changing them, quit LazyGit and start it
 again so the new process reads them.
 
-Theme changes update the same override file. LazyGit's own configuration
-reloading determines when the running interface applies it; reopening LazyGit
-always reads the latest palette. A theme update never restarts the process.
+Theme changes update the same override file; xterm picks them up immediately.
+LazyGit's own configuration reloading determines when the running interface
+applies the file. When a change would alter the colors LazyGit uses, a
+"Reload LazyGit (theme changed)" button offers a restart; choosing it
+replaces the running process, and the new process reads the latest palette.
 With synchronization enabled, the adapter removes an inherited `NO_COLOR`
 flag for the terminal process. Disable synchronization to retain that flag
 and use LazyGit's own color preferences.
