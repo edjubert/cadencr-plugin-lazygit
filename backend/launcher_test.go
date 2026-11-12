@@ -11,6 +11,7 @@ func testPalette() map[string]string {
 	return map[string]string{
 		"background": "#101218", "foreground": "#e2e4e9", "muted": "#9297a5",
 		"border": "#424655", "primary": "#23b5d3", "selection": "#343a49", "error": "#f38ba8",
+		"warning": "#d6a308",
 	}
 }
 

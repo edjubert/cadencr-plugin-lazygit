@@ -16,7 +16,7 @@ func themeDirectory(cx hello) string {
 }
 
 func writeTheme(directory string, palette map[string]string) (string, error) {
-	for _, name := range []string{"background", "foreground", "muted", "border", "primary", "selection", "error"} {
+	for _, name := range []string{"background", "foreground", "muted", "border", "primary", "selection", "error", "warning"} {
 		if !hexColor.MatchString(palette[name]) {
 			return "", fail("BAD_REQUEST", "Theme color "+name+" must be a six-digit hex color.")
 		}
@@ -38,9 +38,11 @@ func writeTheme(directory string, palette map[string]string) (string, error) {
     unstagedChangesColor: ["%s"]
     defaultFgColor: ["%s"]
     searchingActiveBorderColor: ["%s", "bold"]
+    markedBaseCommitFgColor: ["%s"]
+    markedBaseCommitBgColor: ["%s"]
 `, palette["primary"], palette["border"], palette["primary"], palette["selection"],
 		palette["selection"], palette["selection"], palette["foreground"], palette["error"],
-		palette["foreground"], palette["primary"])
+		palette["foreground"], palette["primary"], palette["background"], palette["warning"])
 	// Recent LazyGit versions layer darkTheme/lightTheme over theme. Override
 	// all three so the host palette also wins over those user preferences.
 	document := "gui:\n  theme:\n" + colors + "  darkTheme:\n" + colors + "  lightTheme:\n" + colors
