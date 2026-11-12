@@ -1,6 +1,6 @@
 {
   "name": "cadencr-plugin-lazygit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "engines": { "node": ">=22.19.0" },
@@ -12,7 +12,9 @@
     "stage": "node scripts/stage.mjs",
     "test": "node --test tests/requests.test.mjs tests/metadata.test.mjs tests/notices.test.mjs",
     "test:ui": "node --test tests/terminal-ui.test.mjs",
-    "test:backend": "go -C backend test -race ./..."
+    "test:backend": "go -C backend test -race ./...",
+    "qualify": "node scripts/qualify.mjs",
+    "release:receipt": "node scripts/release-receipt.mjs"
   },
   "dependencies": {
     "@cadencr/tab-sdk": "0.1.3",

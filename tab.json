@@ -3,7 +3,7 @@
   "kind": "tab",
   "id": "lazygit",
   "name": "LazyGit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Run LazyGit in the conversation's worktree, with CadencR theme colors and your existing Git configuration.",
   "icon": "icon.svg",
   "api_version": 1,

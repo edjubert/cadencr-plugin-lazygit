@@ -48,7 +48,7 @@ if (process.argv[2] === "-cd") {
   }
   const platform = process.platform === "darwin"
     ? `darwin-${process.arch === "arm64" ? "aarch64" : "x86_64"}` : "linux-x86_64";
-  const child = spawn(`${root}/bin/${platform}/lazygit`, [], {
+  const child = spawn(process.env.CADENCR_LAZYGIT_BACKEND ?? `${root}/bin/${platform}/lazygit`, [], {
     cwd: root,
     env: {
       ...process.env,

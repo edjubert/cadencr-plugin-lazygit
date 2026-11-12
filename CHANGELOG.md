@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1
+
+- Qualify the native macOS Apple silicon, macOS Intel and Linux x86-64
+  distributions in public GitHub Actions, including the real LazyGit browser
+  smoke test and conformance checks of each extracted backend archive.
+- Add source-bound build receipts and public build attestations for release
+  archives. Publish releases with signed tags and immutable GitHub assets.
+
 ## 0.2.0
 
 - The terminal now uses an opaque CadencR-derived xterm theme and a derived

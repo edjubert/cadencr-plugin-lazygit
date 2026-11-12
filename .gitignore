@@ -3,4 +3,5 @@ dist/
 bin/
 staging/
 artifacts/
+.ci-tools/
 .DS_Store

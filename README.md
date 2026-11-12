@@ -102,9 +102,20 @@ and use LazyGit's own color preferences.
 
 ## Distribution
 
-The repository contains the source and local build tooling. It does not
-publish releases or submit marketplace entries automatically. A registry
-package using `tab.replaces` must require CadencR 0.16.2 or later.
+GitHub Actions builds and tests all three platforms natively. The workflow
+also extracts and validates each backend archive and runs the browser tests
+against those exact bytes, including the installed LazyGit in a disposable
+repository. The compatible CadencR CLI 0.15.8 is built from the pinned
+CadencR 0.16.2 source commit; it is not substituted for the registry's own
+qualified CLI pin.
+
+Tags matching `v*` generate public build attestations for the four archives
+and `build-receipt.json`. The aggregate workflow artifact includes archive
+checksums, native qualification reports and the exact source commit.
+Release publication remains explicit: use a signed version tag, enable
+GitHub release immutability, attach all assets to a draft, verify the build
+attestations with `gh attestation verify`, then publish the draft.
+A registry package using `tab.replaces` must require CadencR 0.16.2 or later.
 
 The terminal adapter is derived from the MIT-licensed
 [review.nvim](https://github.com/edjubert/review.nvim) CadencR integration.

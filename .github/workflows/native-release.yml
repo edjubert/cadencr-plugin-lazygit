@@ -1,0 +1,130 @@
+name: Native qualification and release artifacts
+
+on:
+  push:
+    branches: [main, "feature/**", "edjubert/**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CADENCR_SOURCE_COMMIT: 6fdc42cac06e6d327e04f509f7ec79733b5beb5f
+
+jobs:
+  native:
+    name: Native ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-aarch64
+            runner: macos-15
+          - target: darwin-x86_64
+            runner: macos-15-intel
+          - target: linux-x86_64
+            runner: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22.19.0
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: 1.27.3
+          cache-dependency-path: backend/go.sum
+      - name: Check native architecture
+        env:
+          EXPECTED_TARGET: ${{ matrix.target }}
+        run: |
+          node --input-type=module -e '
+            const target = `${process.platform === "darwin" ? "darwin" : "linux"}-${process.arch === "arm64" ? "aarch64" : "x86_64"}`;
+            if (target !== process.env.EXPECTED_TARGET) throw new Error(`Expected ${process.env.EXPECTED_TARGET}, got ${target}`);
+          '
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Install LazyGit on macOS
+        if: runner.os == 'macOS'
+        run: brew install lazygit
+      - name: Install LazyGit on Linux
+        if: runner.os == 'Linux'
+        env:
+          GOBIN: ${{ runner.temp }}/lazygit-bin
+        run: |
+          go install github.com/jesseduffield/lazygit@v0.66.2
+          echo "$GOBIN" >> "$GITHUB_PATH"
+      - name: Build the native distribution
+        run: npm run build
+      - name: Check out the pinned compatible CadencR CLI source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: merkr-software/CadencR
+          ref: ${{ env.CADENCR_SOURCE_COMMIT }}
+          path: .ci-tools/cadencr
+          persist-credentials: false
+      - name: Build the pinned compatible CLI
+        working-directory: .ci-tools/cadencr
+        run: |
+          rustup toolchain install
+          node scripts/cargo-env.mjs cargo build --locked -p cadencr-cli
+      - name: Pack and qualify the extracted native archive
+        env:
+          CADENCR_CLI: ${{ github.workspace }}/.ci-tools/cadencr/target/debug/cadencr
+          CADENCR_LAZYGIT_SMOKE: lazygit
+          EXPECTED_TARGET: ${{ matrix.target }}
+        run: npm run qualify
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-${{ matrix.target }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 30
+
+  assemble:
+    name: Verify release receipts and attest archives
+    needs: native
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22.19.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: native-*
+          merge-multiple: true
+          path: artifacts
+      - name: Verify all qualified archives and assemble the build receipt
+        run: npm run release:receipt
+      - name: Attest the exact release archives and build receipt
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: |
+            artifacts/*.tar.gz
+            artifacts/build-receipt.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-${{ github.sha }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 30
