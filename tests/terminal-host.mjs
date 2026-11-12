@@ -171,7 +171,7 @@ if (process.argv[2] === "-cd") {
         let result;
         if (data.method === "hello") {
           result = {
-            apiVersion: 1, instanceId: "test", plugin: { id: "lazygit", version: "0.1.0" },
+            apiVersion: 1, instanceId: "test", plugin: { id: "lazygit", version: "0.2.0" },
             visible: true, capabilities: ["backend.request"],
             context: {
               project: { id: 1, name: "Fixture", path: worktree },
