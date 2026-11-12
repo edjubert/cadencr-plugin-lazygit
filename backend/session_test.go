@@ -128,6 +128,28 @@ func TestDirectTerminalWorktreeInputResizeReloadAndRestart(t *testing.T) {
 	}
 }
 
+func TestTerminalStopRestartsLazyGit(t *testing.T) {
+	s, p, _ := fixtureSession(t)
+	if _, err := s.handle("terminal.stop", json.RawMessage(`{}`)); err != nil {
+		t.Fatalf("stop without a running process must be a no-op: %v", err)
+	}
+	if _, err := s.start(p); err != nil {
+		t.Fatal(err)
+	}
+	first := s.cmd.Process.Pid
+	outputUntil(t, s, func(out string, _ bool) bool { return strings.Contains(out, "READY ") })
+	if _, err := s.handle("terminal.stop", json.RawMessage(`{}`)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.start(p); err != nil {
+		t.Fatal(err)
+	}
+	if s.cmd.Process.Pid == first {
+		t.Fatal("restart after stop reused the old process")
+	}
+	outputUntil(t, s, func(out string, _ bool) bool { return strings.Contains(out, "READY ") })
+}
+
 func TestTerminalRejectsInvalidRequestsAndBoundsOutput(t *testing.T) {
 	s, p, _ := fixtureSession(t)
 	for _, request := range []struct{ method, params string }{

@@ -114,6 +114,8 @@ func (s *session) handle(method string, raw json.RawMessage) (any, error) {
 		}
 		// A newly attached terminal also needs a repaint at the same dimensions.
 		return nil, s.cmd.Process.Signal(syscall.SIGWINCH)
+	case "terminal.stop":
+		return nil, s.stop()
 	default:
 		return nil, fail("METHOD_NOT_FOUND", "Unknown backend method: "+method)
 	}
@@ -177,6 +179,29 @@ func (s *session) start(p startParams) (any, error) {
 		close(done)
 	}()
 	return map[string]any{"exited": false, "status": "", "offset": int64(0)}, nil
+}
+
+// stop terminates the running LazyGit so that terminal.start launches a fresh one.
+func (s *session) stop() error {
+	s.mu.Lock()
+	cmd, done, exited := s.cmd, s.done, s.exited
+	s.mu.Unlock()
+	if cmd == nil || exited {
+		return nil
+	}
+	_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
+	select {
+	case <-done:
+		return nil
+	case <-time.After(500 * time.Millisecond):
+	}
+	_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	select {
+	case <-done:
+		return nil
+	case <-time.After(500 * time.Millisecond):
+		return fail("LAZYGIT_STOP_FAILED", "LazyGit did not exit.")
+	}
 }
 
 func terminalEnvironment(inherited []string) []string {
