@@ -72,6 +72,20 @@ test("live CSS theme colors are normalized and written without restarting LazyGi
   assert.equal(await page.locator("#error").isVisible(), false);
 });
 
+test("a theme change offers a reload that restarts LazyGit", {
+  timeout: 30_000,
+}, async (t) => {
+  const fixture = await host(t);
+  const page = await browser(t, fixture);
+  await page.getByRole("status").filter({ hasText: "q exits" }).waitFor();
+  await until(async () => (await fixture.records()).some((record) => record.type === "boot"));
+  assert.equal(await page.locator("#reload").isVisible(), false);
+  await page.evaluate(() => window.fixtureTheme("rgb(200 60 60)"));
+  await page.getByRole("button", { name: "Reload LazyGit (theme changed)" }).click();
+  await until(async () => (await fixture.records()).filter((record) => record.type === "boot").length === 2);
+  assert.equal(await page.locator("#error").isVisible(), false);
+});
+
 test("theme synchronization can be disabled and a tiny guest refits when expanded", {
   timeout: 30_000,
 }, async (t) => {
