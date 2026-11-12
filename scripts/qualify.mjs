@@ -81,7 +81,12 @@ const qualification = {
 };
 await writeFile(`artifacts/qualification-${target}.json`, `${JSON.stringify(qualification, null, 2)}\n`);
 if (target === "linux-x86_64") {
-  const web = JSON.parse(run(cli, ["registry", "pack-tab", "--directory", "staging/qualification/lazygit",
+  const webDirectory = "staging/web/lazygit";
+  await mkdir(webDirectory, { recursive: true });
+  for (const entry of ["tab.json", "icon.svg", "dist"]) {
+    await cp(`staging/qualification/lazygit/${entry}`, `${webDirectory}/${entry}`, { recursive: true });
+  }
+  const web = JSON.parse(run(cli, ["registry", "pack-tab", "--directory", webDirectory,
     "--output", "artifacts/tab.tar.gz"]));
   await writeFile("artifacts/web-receipt.json", `${JSON.stringify(web, null, 2)}\n`);
 }
