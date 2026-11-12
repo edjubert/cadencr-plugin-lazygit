@@ -54,6 +54,7 @@ jobs:
       - name: Install dependencies and Chromium
         run: |
           npm ci
+          go -C backend mod download
           npx playwright install --with-deps chromium
       - name: Install LazyGit on macOS
         if: runner.os == 'macOS'
