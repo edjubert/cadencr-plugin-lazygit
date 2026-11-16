@@ -20,6 +20,65 @@ in the conversation's worktree. No Neovim runtime is involved.
 - Commits, staging, rebases and pushes use your normal Git configuration
   and happen through your own actions inside LazyGit.
 
+## Network access and credentials
+
+The native backend launches your separately installed LazyGit with your user
+permissions and inherited environment. The selected LazyGit executable, Git,
+credential helpers, hooks and user-configured commands retain their normal
+behavior. The tab's empty web permission list does not sandbox that native
+process or restrict its network destinations to the CadencR server.
+
+### Automatic fetches
+
+Opening the tab can contact the worktree's configured Git remotes without a
+manual fetch. In LazyGit 0.64.1 and 0.66.2, `git.autoFetch` defaults to `true`:
+a fetch runs at startup, after the introductory prompts, and repeats according
+to `refresher.fetchInterval` (60 seconds by default). Switching repositories
+can also trigger a fetch. Fetches send repository identifiers and ref/object
+negotiation data and use available Git/SSH authentication, including credential
+helpers and SSH agents, for each remote.
+
+Manual fetch, pull and push actions use your configured Git endpoints and
+credentials. Pushes transmit selected repository objects. Hooks and custom
+commands can make additional requests according to your own configuration.
+
+### LazyGit updates
+
+Official standalone LazyGit builds can also check
+`https://github.com/jesseduffield/lazygit/releases/latest` for updates.
+Availability and timing depend on the installed build and `update.days`
+(14 days by default). Homebrew and unversioned builds skip the automatic
+check in the versions inspected; other package-manager builds may skip it too.
+
+The check can also request the headers of a platform-specific release archive
+on GitHub before offering an update. These requests disclose normal connection
+metadata, such as your IP address, and the archive URL identifies your operating
+system and architecture. These public requests do not use Git/SSH credential
+helpers. Accepting an update, or enabling
+`update.method: background`, can download the archive from GitHub and its
+release-asset hosts and replace the installed LazyGit executable. LazyGit
+controls this behavior.
+
+### Disable automatic network activity
+
+Merge these options into your existing LazyGit configuration to disable
+automatic fetches and automatic update checks:
+
+```yaml
+git:
+  autoFetch: false
+update:
+  method: never
+```
+
+These options do not disable network access from manual Git actions, manually
+requested update checks, hooks or custom commands. Restart LazyGit after
+changing these startup options.
+
+These defaults were checked against LazyGit 0.64.1 and 0.66.2. The tab does not
+pin or install LazyGit or Git; other versions may behave differently. Review
+the selected executable and its configuration before activation.
+
 ## Build and verify
 
 Requires Node.js 22.19+ and Go 1.23+.
