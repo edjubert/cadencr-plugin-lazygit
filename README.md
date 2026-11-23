@@ -42,6 +42,21 @@ Manual fetch, pull and push actions use your configured Git endpoints and
 credentials. Pushes transmit selected repository objects. Hooks and custom
 commands can make additional requests according to your own configuration.
 
+### GitHub pull request and status refresh
+
+In LazyGit 0.64.1 and 0.66.2, the full refresh scope includes pull requests.
+When a GitHub or GitHub Enterprise remote has authentication available, LazyGit
+runs `gh auth token --hostname <host>` (or falls back to go-gh's environment
+and config lookup when `gh` is unavailable) and sends authenticated GraphQL
+POST requests to `https://api.github.com/graphql` (or the Enterprise host's
+`/api/graphql`). These requests carry the repository owner and name plus
+upstream branch names, and ask for pull request and check-run status. They
+run on the same refresh triggers as the automatic fetches (startup and
+`refresher.fetchInterval`), and are not gated by `git.autoFetch: false` or
+`update.method: never`. There is no dedicated opt-out for this GraphQL path in
+the qualified versions; disabling the GitHub remote's authentication (for
+example by removing `gh` credentials for that host) prevents it from running.
+
 ### LazyGit updates
 
 Official standalone LazyGit builds can also check
