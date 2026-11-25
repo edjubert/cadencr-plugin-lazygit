@@ -50,12 +50,16 @@ runs `gh auth token --hostname <host>` (or falls back to go-gh's environment
 and config lookup when `gh` is unavailable) and sends authenticated GraphQL
 POST requests to `https://api.github.com/graphql` (or the Enterprise host's
 `/api/graphql`). These requests carry the repository owner and name plus
-upstream branch names, and ask for pull request and check-run status. They
-run on the same refresh triggers as the automatic fetches (startup and
-`refresher.fetchInterval`), and are not gated by `git.autoFetch: false` or
-`update.method: never`. There is no dedicated opt-out for this GraphQL path in
-the qualified versions; disabling the GitHub remote's authentication (for
-example by removing `gh` credentials for that host) prevents it from running.
+upstream branch names, and ask for pull request and check-run status. LazyGit
+can make these requests during startup, after Git fetches, when the terminal
+reports that LazyGit has regained focus, and when background detection finds a
+Git reference change. `refresher.fetchInterval` controls the automatic Git
+fetch schedule. It does not control the other triggers.
+`git.autoDetectExternalChanges: false` disables the ref-change trigger only.
+There is no dedicated GraphQL opt-out in these versions. To prevent these
+requests through authentication scoping, run LazyGit without an available
+GitHub token for any eligible remote, including tokens supplied through the
+inherited environment and those available through the CLI or its configuration.
 
 ### LazyGit updates
 
@@ -87,8 +91,10 @@ update:
 ```
 
 These options do not disable network access from manual Git actions, manually
-requested update checks, hooks or custom commands. Restart LazyGit after
-changing these startup options.
+requested update checks, hooks or custom commands. They also do not disable the
+GitHub pull request and status requests described above, which follow their own
+triggers and authentication scoping. Restart LazyGit after changing these
+startup options.
 
 These defaults were checked against LazyGit 0.64.1 and 0.66.2. The tab does not
 pin or install LazyGit or Git; other versions may behave differently. Review
